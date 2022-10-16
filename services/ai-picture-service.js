@@ -5,6 +5,7 @@ class AIPictureService extends BaseService {
     constructor(stash, log, axios, moment) {
         super(stash, log, axios, moment);
         this.craiyon = new craiyonClient();
+        this.aiPromptsWithArt = [];
     }
 
     /**
@@ -18,13 +19,28 @@ class AIPictureService extends BaseService {
      */
     async post(req, res) {
         try {
-            const prompt = req.body.prompt;
-            const response = await this.craiyon.generate({prompt});
-            const imageBase64 = response._images[0].base64;
-            res.send(imageBase64);
+            console.log('incoming req', req);
+            this.aiPromptsWithArt = [];
+            const prompts = req.body.prompts;
+            console.log('prompts coming in', prompts);
+            for (let i = 0; i < prompts.length; i++) {
+                const prompt = prompts[i];
+                console.log('das prompt', prompt);
+                const promptText = prompt.prompt;
+                let response = await this.craiyon.generate({prompt: promptText});
+                const artBase64 = response._images[0].base64;
+                this.aiPromptsWithArt.push({
+                    ...prompt,
+                    artBase64
+                })
+            }
+            console.log('sending this back', this.aiPromptsWithArt);
+            res.send(this.aiPromptsWithArt);
         } catch (error) {
             this.log.error(error);
             res.send(error);
+        } finally {
+            this.aiPromptsWithArt = [];
         }
     }
 }

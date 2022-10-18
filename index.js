@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import configure from './configure.cjs';
 import log from '@appku/stashku-log';
+import cors from 'cors';
 
 dotenv.config();
 (async () => {
@@ -15,6 +16,7 @@ dotenv.config();
     log.debug(`NODE_HOST: ${process.env.NODE_HOST}`);
     log.debug(`HOST: ${process.env.HOST}`);
     app.listen(port, host, () => {
+        app.use(cors())
         console.log(`listening on ${port}`);
         log.info(`Listening on: http://${host}:${port}`)
     });

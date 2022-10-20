@@ -28,8 +28,10 @@ class AIPictureService extends BaseService {
         prompt,
         artBase64,
       };
+      console.log('toSend: ', toSend);
       res.json(toSend);
     } catch (error) {
+      console.log(error);
       res.send(error);
     }
   }

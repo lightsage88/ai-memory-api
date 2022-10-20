@@ -37,8 +37,8 @@ class APIRouter extends BaseRouter {
         // router.get('/api/customers', cs.readCustomers.bind(cs));
         // router.put('/api/customers',  cs.updateCustomers.bind(cs));
         // router.delete('/api/customers', cs.deleteCustomers.bind(cs));
-        router.post('/api/ai-picture', aps.post.bind(aps));
-
+        // router.post('/api/ai-picture', aps.post.bind(aps));
+        router.post('/api/ai-picture-single', aps.post.bind(aps));
     }
 }
 

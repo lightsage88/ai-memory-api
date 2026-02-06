@@ -30,47 +30,34 @@ class AIPictureService extends BaseService {
             for (let i = 0; i < incomingPrompts.length; i++) {
                 const promptObj = incomingPrompts[i];
                 const promptText = promptObj.prompt;
-                const model = promptObj.model || 'turbo';
 
                 // Send initial processing status for this prompt
-                res.write(`data: ${JSON.stringify({ status: 'processing', message: 'queued', prompt: promptText })}\n\n`);
+                res.write(`data: ${JSON.stringify({ status: 'processing', message: 'Generating image...', prompt: promptText })}\n\n`);
 
-                // Proxy request to subnp.com and stream its response back as SSE-style `data: ` JSON lines
-                const upstreamUrl = 'https://subnp.com/api/free/generate';
-                const upstream = await this.axios.post(upstreamUrl, { prompt: promptText, model }, { responseType: 'stream', headers: { 'Content-Type': 'application/json' } });
-
-                await new Promise((resolve, reject) => {
-                    upstream.data.on('data', (chunk) => {
-                        const chunkStr = chunk.toString();
-                        const lines = chunkStr.split(/\r?\n/).filter(Boolean);
-                        lines.forEach((line) => {
-                            // If the upstream already emits SSE-like `data: ` lines, forward them.
-                            if (line.startsWith('data:')) {
-                                res.write(line + '\n\n');
-                                return;
-                            }
-
-                            // Try to parse JSON; if parse succeeds, forward as-is, otherwise wrap.
-                            let payload;
-                            try {
-                                payload = JSON.parse(line);
-                            } catch (e) {
-                                payload = { status: 'processing', message: line };
-                            }
-                            res.write(`data: ${JSON.stringify(payload)}\n\n`);
-                        });
+                try {
+                    // Call Pixazo.ai Flux Schnell API
+                    const upstreamUrl = 'https://gateway.pixazo.ai/flux-1-schnell/v1/getData';
+                    const response = await this.axios.post(upstreamUrl, {
+                        prompt: promptText,
+                        num_steps: 4,
+                        height: 512,
+                        width: 512
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Cache-Control': 'no-cache',
+                            'Ocp-Apim-Subscription-Key': process.env.PIXAZO_API_KEY
+                        }
                     });
 
-                    upstream.data.on('end', () => {
-                        res.write(`data: ${JSON.stringify({ status: 'complete', prompt: promptText })}\n\n`);
-                        resolve();
-                    });
-
-                    upstream.data.on('error', (err) => {
-                        res.write(`data: ${JSON.stringify({ status: 'error', message: err.message })}\n\n`);
-                        reject(err);
-                    });
-                });
+                    if (response.data && response.data.output) {
+                        res.write(`data: ${JSON.stringify({ status: 'complete', prompt: promptText, imageUrl: response.data.output })}\n\n`);
+                    } else {
+                        res.write(`data: ${JSON.stringify({ status: 'error', message: 'No image URL returned', prompt: promptText })}\n\n`);
+                    }
+                } catch (err) {
+                    res.write(`data: ${JSON.stringify({ status: 'error', message: err.message, prompt: promptText })}\n\n`);
+                }
             }
 
             res.end();

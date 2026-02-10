@@ -17,22 +17,13 @@ class AIPictureService extends BaseService {
      */
     async post(req, res) {
         try {
-            this.aiPromptsWithArt = [];
-
+            const imageData = [];
             const incomingPrompts = req.body.prompts || (req.body.prompt ? [{ prompt: req.body.prompt, model: req.body.model }] : []);
             console.log('incomingPrompts:', incomingPrompts);
-
-            res.setHeader('Content-Type', 'text/event-stream');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Connection', 'keep-alive');
-            if (res.flushHeaders) res.flushHeaders();
 
             for (let i = 0; i < incomingPrompts.length; i++) {
                 const promptObj = incomingPrompts[i];
                 const promptText = promptObj.prompt;
-
-                // Send initial processing status for this prompt
-                res.write(`data: ${JSON.stringify({ status: 'processing', message: 'Generating image...', prompt: promptText })}\n\n`);
 
                 try {
                     // Call Pixazo.ai Flux Schnell API
@@ -49,28 +40,21 @@ class AIPictureService extends BaseService {
                             'Ocp-Apim-Subscription-Key': process.env.PIXAZO_API_KEY
                         }
                     });
-
                     if (response.data && response.data.output) {
-                        res.write(`data: ${JSON.stringify({ status: 'complete', prompt: promptText, imageUrl: response.data.output })}\n\n`);
-                    } else {
-                        res.write(`data: ${JSON.stringify({ status: 'error', message: 'No image URL returned', prompt: promptText })}\n\n`);
+                        imageData.push({
+                            image_url: response.data.output,
+                            promptText,
+                    });
                     }
                 } catch (err) {
-                    res.write(`data: ${JSON.stringify({ status: 'error', message: err.message, prompt: promptText })}\n\n`);
+                    this.log.error(`Error generating image for prompt "${promptText}":`, err.message);
                 }
             }
 
-            res.end();
+            res.json({ imageData });
         } catch (error) {
             this.log.error(error);
-            try {
-                res.write(`data: ${JSON.stringify({ status: 'error', message: error.message })}\n\n`);
-                res.end();
-            } catch (e) {
-                res.status(500).send({ error: error.message });
-            }
-        } finally {
-            this.aiPromptsWithArt = [];
+            res.status(500).send({ error: error.message });
         }
     }
 }

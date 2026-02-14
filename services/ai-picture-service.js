@@ -1,6 +1,6 @@
-import BaseService from './base-service.js';
+import PromptImageUtilities from '../utils/promptImage.js';
 
-class AIPictureService extends BaseService {
+class AIPictureService extends PromptImageUtilities {
     constructor(stash, log, db) {
         super(stash, log, db);
         this.aiPromptsWithArt = [];

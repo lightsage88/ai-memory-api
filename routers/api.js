@@ -11,8 +11,8 @@ class APIRouter extends BaseRouter {
     /**
      * @inheritdoc
      */
-    constructor(app, router, log, axios) {
-        super(app, router, log);
+    constructor(app, router, log, db) {
+        super(app, router, log, db);
         let upload = multer();
         let stash = new StashKu({
             engine: '@appku/stashku-sql',
@@ -20,9 +20,9 @@ class APIRouter extends BaseRouter {
         });
         this.axios = axios;
         //attaching services example
-        // const ds = new DemosService(stash, log);
-        // const cs = new CustomersService(stash, log);
-        const aps = new AIPictureService(stash, log);
+        // const ds = new DemosService(stash, log, db);
+        // const cs = new CustomersService(stash, log, db);
+        const aps = new AIPictureService(stash, log, db);
 
         
         //routes examples
@@ -35,6 +35,7 @@ class APIRouter extends BaseRouter {
         // router.get('/api/customers', cs.readCustomers.bind(cs));
         // router.put('/api/customers',  cs.updateCustomers.bind(cs));
         // router.delete('/api/customers', cs.deleteCustomers.bind(cs));
+        router.get('/api/test', aps.get.bind(aps));
         router.post('/api/ai-picture', aps.post.bind(aps));
 
     }

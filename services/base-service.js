@@ -12,8 +12,9 @@ class BaseService {
      * Constructs a `BaseRouter` instance.
      * @param {StashKu} stash - A shared stashku instance to utilize for database queries.
      * @param {log} log - The default logger.
+     * @param {any} db - A shared database connection pool (e.g., MySQL pool).
      */
-    constructor(stash, log) {
+    constructor(stash, log, db = null) {
 
         /**
          * @type {any}
@@ -24,6 +25,11 @@ class BaseService {
          * @type {any}
          */
         this.log = log;
+
+        /**
+         * @type {any}
+         */
+        this.db = db;
 
         /**
          * @type {any}

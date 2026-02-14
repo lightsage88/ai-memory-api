@@ -1,9 +1,14 @@
 import BaseService from './base-service.js';
 
 class AIPictureService extends BaseService {
-    constructor(stash, log) {
-        super(stash, log);
+    constructor(stash, log, db) {
+        super(stash, log, db);
         this.aiPromptsWithArt = [];
+    }
+
+    async get(req, res) {
+        const [rows] = await this.db.query('SELECT 1 + 1 AS result');
+        res.json({ message: 'AI Picture Service is up and running!', rows });
     }
 
     /**

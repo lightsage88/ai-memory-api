@@ -11,8 +11,9 @@ class BaseRouter {
      * @param {express} app - The express app.
      * @param {express.Router} router - The top-most express router.
      * @param {log} log - The default logger.
+     * @param {any} db - A shared database connection pool.
      */
-    constructor(app, router, log) {
+    constructor(app, router, log, db = null) {
 
         /**
          * @type {express}
@@ -28,6 +29,11 @@ class BaseRouter {
          * @type {log}
          */
         this.log = log;
+
+        /**
+         * @type {any}
+         */
+        this.db = db;
 
     }
 }

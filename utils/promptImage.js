@@ -27,7 +27,7 @@ class PromptImageUtilities extends BaseService {
     );
 
     if (rows.length > 0) {
-      return { imageUrl: rows[0].image_url, cacheHit: true };
+      return { imageUrl: rows[0].image_url, cacheHit: true, normalized, hash };
     }
 
     return { cacheHit: false, normalized, hash };

@@ -12,10 +12,9 @@ class AIPictureService extends PromptImageUtilities {
     }
 
     /**
-     * This method makes a post request to the AI Picture Service. It will leverage the class'
-     * instance of 'Client' from 'craiyon' and will use the prompt string from the request body
-     * to create an image using the AI driven picture generator and then will send the base64
-     * of that image back as the response
+     * This method makes a post request to the AI Picture Service. It leverages methods from
+     * the PromptImageUtilities class to check for cached images and save new ones; eliminating
+     * excess use of the 
      * @param {Object} req - the request body
      * @param {Object} res - the response body
      * @returns {base64} - the picture described by the prompt from the request body.
@@ -23,18 +22,27 @@ class AIPictureService extends PromptImageUtilities {
     async post(req, res) {
         try {
             const imageData = [];
-            const incomingPrompts = req.body.prompts || (req.body.prompt ? [{ prompt: req.body.prompt, model: req.body.model }] : []);
-            console.log('incomingPrompts:', incomingPrompts);
-
+            const { prompts: incomingPrompts } = req.body;
             for (let i = 0; i < incomingPrompts.length; i++) {
                 const promptObj = incomingPrompts[i];
                 const promptText = promptObj.prompt;
 
                 try {
+                    const { imageUrl, cacheHit, normalized, hash } = await this.findByPrompt(promptText);
+
+                    if (cacheHit) {
+                        imageData.push({
+                            image_url: imageUrl,
+                            promptText,
+                            hash
+                        });
+                        continue;
+                    }
+
                     // Call Pixazo.ai Flux Schnell API
                     const upstreamUrl = 'https://gateway.pixazo.ai/flux-1-schnell/v1/getData';
                     const response = await this.axios.post(upstreamUrl, {
-                        prompt: promptText,
+                        prompt: normalized,
                         num_steps: 4,
                         height: 512,
                         width: 512
@@ -45,11 +53,14 @@ class AIPictureService extends PromptImageUtilities {
                             'Ocp-Apim-Subscription-Key': process.env.PIXAZO_API_KEY
                         }
                     });
+
                     if (response.data && response.data.output) {
+                        await this.save(promptText, response.data.output, hash);
                         imageData.push({
                             image_url: response.data.output,
                             promptText,
-                    });
+                            hash
+                        });
                     }
                 } catch (err) {
                     this.log.error(`Error generating image for prompt "${promptText}":`, err.message);
